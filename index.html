@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>黑黑黑肥肥 Chiang Mai Trip 2026</title>
+    
+    <!-- External Resources -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- React & Babel for Single File App -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f7f7f2;
+            color: #333333;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: contain;
+        }
+        .muji-black { color: #000000; }
+        .muji-bg-black { background-color: #000000; }
+        .muji-border-black { border-color: #000000; }
+        .muji-shadow { box-shadow: 0 4px 25px rgba(0,0,0,0.05); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        input, textarea, button { outline: none !important; }
+        .active-tab { background-color: #ffffff; color: #000000; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .timeline-line::before {
+            content: '';
+            position: absolute;
+            left: 11px;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background-color: #e5e7eb;
+            z-index: 0;
+        }
+
+        /* Drag and Drop Visual Styles */
+        .dragging { opacity: 0.4; transform: scale(0.98); }
+        .drag-over { border-top: 2px solid #000; }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "vite": "https://esm.sh/vite@^7.3.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useCallback } = React;
+
+        const STORAGE_KEY = 'MUJI_TRIP_CNX_2026_MASTER';
+
+        const INITIAL_DATA = {
+            flights: [
+                { id: 'f1', type: 'Outbound', code: 'UO736', airline: 'HK Express', date: '2026-03-31', departureTime: '07:45', arrivalTime: '09:45', from: 'HKG', to: 'CNX' },
+                { id: 'f2', type: 'Return', code: 'UO737', airline: 'HK Express', date: '2026-04-05', departureTime: '19:25', arrivalTime: '23:20', from: 'CNX', to: 'HKG' }
+            ],
+            accommodations: [
+                { id: 'h1', name: 'The Inside House', address: '56 Samlarn Rd, Phra Sing, Chiang Mai 50200, Thailand', checkIn: '2026-03-31', checkOut: '2026-04-05', link: 'https://www.theinsidehouse.com/' }
+            ],
+            itinerary: [
+                {
+                    id: 'd1', dayNumber: 1, date: '2026-03-31',
+                    items: [
+                        { id: 'i1', time: '11:00', title: 'Check-in The Inside House', description: 'Early check-in if available, drop bags.', isImportant: true },
+                        { id: 'i2', time: '13:00', title: 'Lunch: Khao Soi Mae Sai', description: 'Famous curry noodles.', mapUrl: 'https://maps.google.com/?q=Khao+Soi+Mae+Sai' }
+                    ]
+                },
+                { id: 'd2', dayNumber: 2, date: '2026-04-01', items: [{ id: 'i3', time: '09:00', title: 'Doi Suthep Temple', description: 'Mountain temple visit.', isImportant: true }] },
+                { id: 'd3', dayNumber: 3, date: '2026-04-02', items: [] },
+                { id: 'd4', dayNumber: 4, date: '2026-04-03', items: [] },
+                { id: 'd5', dayNumber: 5, date: '2026-04-04', items: [] },
+                { id: 'd6', dayNumber: 6, date: '2026-04-05', items: [] }
+            ],
+            guides: [
+                { id: 'g1', title: 'Old City Walk', category: 'Temple', content: 'Explore the heart of Chiang Mai. Wat Phra Singh is a must-see.', imageUrl: 'https://images.unsplash.com/photo-1542362567-b0337728f2f8?q=80&w=800', tags: ['Culture'], coordinates: { lat: 18.7885, lng: 98.9853 } }
+            ],
+            expenses: [],
+            checklist: [
+                { id: 'c1', text: 'Passport', completed: true, category: 'Essentials' },
+                { id: 'c2', text: 'Thai Baht', completed: false, category: 'Money' },
+                { id: 'c3', text: 'Universal Adapter', completed: true, category: 'Tech' }
+            ],
+            memos: [{ id: 'm1', content: 'Book cooking class: https://www.thaicookeryschool.com', timestamp: Date.now() }],
+            settings: { fxRates: { 'THB': 0.23 }, mainCurrency: 'THB' }
+        };
+
+        // --- COMPONENTS ---
+
+        const Navbar = ({ currentPage, setCurrentPage }) => {
+            const navItems = [
+                { id: 'plan', label: 'PLAN', icon: 'fa-calendar' },
+                { id: 'guide', label: 'GUIDE', icon: 'fa-book' },
+                { id: 'wallet', label: 'WALLET', icon: 'fa-coins' },
+                { id: 'lists', label: 'LISTS', icon: 'fa-check-double' },
+                { id: 'info', label: 'INFO', icon: 'fa-circle-question' },
+            ];
+            return (
+                <nav className="flex justify-between items-center bg-gray-100 rounded-2xl p-1 border border-gray-200 mb-6">
+                    {navItems.map((item) => (
+                        <button
+                            key={item.id}
+                            onClick={() => setCurrentPage(item.id)}
+                            className={`relative flex-1 flex flex-col items-center gap-1 py-2.5 transition-all duration-300 rounded-xl ${
+                                currentPage === item.id ? 'active-tab' : 'text-gray-400'
+                            }`}
+                        >
+                            <i className={`fa-solid ${item.icon} text-sm`}></i>
+                            <span className="text-[9px] font-bold tracking-tighter">{item.label}</span>
+                        </button>
+                    ))}
+                </nav>
+            );
+        };
+
+        const PlanPage = ({ data, updateData }) => {
+            const [selectedDayId, setSelectedDayId] = useState(data.itinerary[0]?.id);
+            const [isAdding, setIsAdding] = useState(false);
+            const [draggedItemId, setDraggedItemId] = useState(null);
+            const [newItem, setNewItem] = useState({ time: '', title: '', description: '', isImportant: false });
+
+            const selectedDay = data.itinerary.find(d => d.id === selectedDayId);
+
+            const handleAddItem = () => {
+                if (!newItem.title) return;
+                const updated = data.itinerary.map(day => {
+                    if (day.id === selectedDayId) {
+                        return { ...day, items: [...day.items, { ...newItem, id: Date.now().toString() }].sort((a,b) => a.time.localeCompare(b.time)) };
+                    }
+                    return day;
+                });
+                updateData({ itinerary: updated });
+                setNewItem({ time: '', title: '', description: '', isImportant: false });
+                setIsAdding(false);
+            };
+
+            // Drag and Drop Logic
+            const onDragStart = (e, id) => { setDraggedItemId(id); e.dataTransfer.effectAllowed = 'move'; };
+            const onDragOver = (e, id) => {
+                e.preventDefault();
+                if (draggedItemId === null || draggedItemId === id) return;
+                const updated = data.itinerary.map(day => {
+                    if (day.id === selectedDayId) {
+                        const items = [...day.items];
+                        const fromIdx = items.findIndex(i => i.id === draggedItemId);
+                        const toIdx = items.findIndex(i => i.id === id);
+                        if (fromIdx !== -1 && toIdx !== -1) {
+                            const [item] = items.splice(fromIdx, 1);
+                            items.splice(toIdx, 0, item);
+                            return { ...day, items };
+                        }
+                    }
+                    return day;
+                });
+                updateData({ itinerary: updated });
+            };
+
+            return (
+                <div className="fade-in p-2">
+                    <div className="flex gap-3 overflow-x-auto pb-4 hide-scrollbar">
+                        {data.itinerary.map((day) => (
+                            <button
+                                key={day.id}
+                                onClick={() => setSelectedDayId(day.id)}
+                                className={`flex-shrink-0 w-16 h-16 rounded-2xl flex flex-col items-center justify-center border transition-all ${
+                                    selectedDayId === day.id ? 'muji-bg-black text-white' : 'bg-white text-gray-400 border-gray-100'
+                                }`}
+                            >
+                                <span className="text-[10px] font-bold opacity-70">DAY</span>
+                                <span className="text-xl font-medium tracking-tighter">{day.dayNumber}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="mt-8 space-y-6 relative timeline-line">
+                        {selectedDay?.items.map((item) => (
+                            <div 
+                                key={item.id} 
+                                className={`relative pl-10 transition-all ${draggedItemId === item.id ? 'dragging' : ''}`}
+                                draggable
+                                onDragStart={(e) => onDragStart(e, item.id)}
+                                onDragOver={(e) => onDragOver(e, item.id)}
+                                onDragEnd={() => setDraggedItemId(null)}
+                            >
+                                <div className={`absolute left-1.5 top-1.5 w-3 h-3 rounded-full border-2 border-white muji-shadow ${item.isImportant ? 'muji-bg-black' : 'bg-gray-300'}`}></div>
+                                <div className="bg-white p-5 rounded-3xl muji-shadow border border-gray-100 flex flex-col gap-1 group">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex items-center gap-2">
+                                            <div className="cursor-grab text-gray-200 group-hover:text-gray-400"><i className="fa-solid fa-grip-vertical text-xs"></i></div>
+                                            <span className="text-[10px] font-bold text-gray-400 tracking-widest">{item.time || '--:--'}</span>
+                                        </div>
+                                        <button onClick={() => updateData({ itinerary: data.itinerary.map(d => d.id === selectedDayId ? {...d, items: d.items.filter(i => i.id !== item.id)} : d) })} className="text-gray-200 hover:text-red-400"><i className="fa-solid fa-xmark text-xs"></i></button>
+                                    </div>
+                                    <h3 className={`font-medium ${item.isImportant ? 'text-black underline decoration-gray-200 underline-offset-4' : 'text-gray-700'}`}>{item.title}</h3>
+                                    {item.description && <p className="text-xs text-gray-400 font-light mt-1 leading-relaxed">{item.description}</p>}
+                                    {item.mapUrl && <a href={item.mapUrl} target="_blank" rel="noopener" className="mt-3 text-[10px] font-bold uppercase tracking-widest text-black/50 bg-gray-50 px-3 py-1.5 rounded-lg w-fit flex items-center gap-2"><i className="fa-solid fa-location-dot"></i> Map</a>}
+                                </div>
+                            </div>
+                        ))}
+
+                        {isAdding ? (
+                            <div className="bg-white p-6 rounded-3xl muji-shadow border border-gray-100 space-y-4 fade-in">
+                                <input type="time" className="w-full p-4 bg-gray-50 rounded-2xl text-sm" value={newItem.time} onChange={e => setNewItem({...newItem, time: e.target.value})} />
+                                <input placeholder="Destination / Activity" className="w-full p-4 bg-gray-50 rounded-2xl text-sm" value={newItem.title} onChange={e => setNewItem({...newItem, title: e.target.value})} />
+                                <textarea placeholder="Notes..." className="w-full p-4 bg-gray-50 rounded-2xl text-sm h-24 resize-none" value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})} />
+                                <label className="flex items-center gap-3 px-2">
+                                    <input type="checkbox" className="w-4 h-4 rounded" checked={newItem.isImportant} onChange={e => setNewItem({...newItem, isImportant: e.target.checked})} />
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Important</span>
+                                </label>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setIsAdding(false)} className="flex-1 py-4 bg-gray-100 text-gray-400 rounded-2xl text-[10px] font-bold">CANCEL</button>
+                                    <button onClick={handleAddItem} className="flex-1 py-4 muji-bg-black text-white rounded-2xl text-[10px] font-bold">SAVE</button>
+                                </div>
+                            </div>
+                        ) : (
+                            <button onClick={() => setIsAdding(true)} className="w-full py-5 border-2 border-dashed border-gray-200 rounded-3xl text-gray-300 hover:text-black hover:border-black transition-all text-sm font-light">+ Add New Plan</button>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const WalletPage = ({ data, updateData }) => {
+            const [calc, setCalc] = useState('');
+            const [name, setName] = useState('');
+            const [amt, setAmt] = useState('');
+            const [photo, setPhoto] = useState(null);
+
+            const rate = data.settings.fxRates['THB'] || 0.23;
+
+            const handleCalc = () => {
+                try {
+                    const res = new Function(`return ${calc.replace(/[^0-9+\-*/.]/g, '')}`)();
+                    setCalc(res.toString());
+                    setAmt(res.toString());
+                } catch { setCalc('Error'); }
+            };
+
+            const addExpense = () => {
+                const fAmt = parseFloat(amt);
+                if (!name || isNaN(fAmt)) return;
+                const exp = { id: Date.now().toString(), name, amount: fAmt, hkdAmount: fAmt * rate, date: new Date().toLocaleDateString(), photo };
+                updateData({ expenses: [exp, ...data.expenses] });
+                setName(''); setAmt(''); setCalc(''); setPhoto(null);
+            };
+
+            const totals = useMemo(() => data.expenses.reduce((acc, e) => ({ thb: acc.thb + e.amount, hkd: acc.hkd + e.hkdAmount }), { thb: 0, hkd: 0 }), [data.expenses]);
+
+            return (
+                <div className="fade-in space-y-6">
+                    <div className="bg-white p-7 rounded-[2.5rem] muji-shadow border border-gray-100 flex justify-between items-center">
+                        <div>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Spent (THB)</p>
+                            <p className="text-3xl font-bold mt-1">{totals.thb.toLocaleString()}</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">≈ HKD</p>
+                            <p className="text-xl font-medium text-black/80 mt-1">${totals.hkd.toLocaleString()}</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-[2.5rem] muji-shadow border border-gray-100 space-y-4">
+                        <div className="flex gap-2">
+                            <input placeholder="Expr (500+250)" className="flex-1 p-4 bg-gray-50 rounded-2xl text-sm" value={calc} onChange={e => setCalc(e.target.value)} onBlur={handleCalc} />
+                            <button onClick={handleCalc} className="w-14 h-14 bg-black text-white rounded-2xl flex items-center justify-center"><i className="fa-solid fa-equals"></i></button>
+                        </div>
+                        <input placeholder="Expense name..." className="w-full p-4 bg-gray-50 rounded-2xl text-sm" value={name} onChange={e => setName(e.target.value)} />
+                        <div className="flex gap-2">
+                            <div className="relative flex-1">
+                                <span className="absolute left-4 top-4 text-[10px] font-bold text-gray-400">THB</span>
+                                <input placeholder="0.00" type="number" className="w-full p-4 pl-12 bg-gray-50 rounded-2xl text-sm font-medium" value={amt} onChange={e => setAmt(e.target.value)} />
+                            </div>
+                            <label className={`w-14 h-14 flex items-center justify-center rounded-2xl cursor-pointer ${photo ? 'bg-black text-white' : 'bg-gray-50 text-gray-300'}`}>
+                                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                        const reader = new FileReader();
+                                        reader.onload = (ev) => setPhoto(ev.target.result);
+                                        reader.readAsDataURL(file);
+                                    }
+                                }} />
+                                <i className="fa-solid fa-camera"></i>
+                            </label>
+                        </div>
+                        <button onClick={addExpense} className="w-full py-5 muji-bg-black text-white rounded-3xl font-bold tracking-[0.2em] text-[10px] uppercase muji-shadow">ADD EXPENSE</button>
+                    </div>
+
+                    <div className="space-y-3 pb-20">
+                        {data.expenses.map(exp => (
+                            <div key={exp.id} className="bg-white p-5 rounded-3xl flex items-center gap-4 muji-shadow border border-gray-50 group">
+                                <div className="w-12 h-12 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center border border-gray-100">
+                                    {exp.photo ? <img src={exp.photo} className="w-full h-full object-cover grayscale" /> : <i className="fa-solid fa-receipt text-gray-200"></i>}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-sm font-medium text-gray-800 truncate">{exp.name}</h4>
+                                    <p className="text-[9px] text-gray-300 font-bold uppercase">{exp.date}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-sm font-bold text-gray-800">{exp.amount.toLocaleString()} <span className="text-[9px] font-medium opacity-40">THB</span></p>
+                                    <p className="text-[10px] text-gray-400 font-medium tracking-tight">≈ ${exp.hkdAmount.toLocaleString()} HKD</p>
+                                </div>
+                                <button onClick={() => updateData({ expenses: data.expenses.filter(e => e.id !== exp.id) })} className="opacity-0 group-hover:opacity-100 text-gray-200 hover:text-red-400 p-2"><i className="fa-solid fa-trash text-xs"></i></button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const ListsPage = ({ data, updateData }) => {
+            const [activeTab, setActiveTab] = useState('check');
+            const [input, setInput] = useState('');
+
+            const addItem = () => {
+                if (!input) return;
+                if (activeTab === 'check') {
+                    updateData({ checklist: [...data.checklist, { id: Date.now().toString(), text: input, completed: false, category: 'General' }] });
+                } else {
+                    updateData({ memos: [{ id: Date.now().toString(), content: input, timestamp: Date.now() }, ...data.memos] });
+                }
+                setInput('');
+            };
+
+            const renderMemo = (text) => {
+                const urlMatch = text.match(/(https?:\/\/[^\s]+)/g);
+                if (urlMatch) {
+                    return (
+                        <>
+                            <span>{text.split(urlMatch[0])[0]}</span>
+                            <a href={urlMatch[0]} target="_blank" rel="noopener" className="inline-flex items-center gap-2 mt-2 bg-gray-50 text-black text-[9px] font-bold px-4 py-2 rounded-xl border border-gray-100 uppercase tracking-widest">
+                                Visit Link <i className="fa-solid fa-arrow-up-right-from-square text-[8px]"></i>
+                            </a>
+                            <span>{text.split(urlMatch[0])[1]}</span>
+                        </>
+                    );
+                }
+                return text;
+            };
+
+            return (
+                <div className="fade-in space-y-6">
+                    <div className="flex bg-gray-100 rounded-2xl p-1 border border-gray-200">
+                        <button onClick={() => setActiveTab('check')} className={`flex-1 py-3.5 text-[10px] font-bold tracking-widest rounded-xl transition-all ${activeTab === 'check' ? 'active-tab' : 'text-gray-400'}`}>CHECKLIST</button>
+                        <button onClick={() => setActiveTab('memo')} className={`flex-1 py-3.5 text-[10px] font-bold tracking-widest rounded-xl transition-all ${activeTab === 'memo' ? 'active-tab' : 'text-gray-400'}`}>MEMOS</button>
+                    </div>
+
+                    <div className="flex gap-2">
+                        <input placeholder={activeTab === 'check' ? "Add essential item..." : "Write a note..."} className="flex-1 p-5 bg-white rounded-3xl muji-shadow border border-gray-100 text-sm" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addItem()} />
+                        <button onClick={addItem} className="w-16 h-16 bg-black text-white rounded-3xl flex items-center justify-center muji-shadow"><i className="fa-solid fa-plus"></i></button>
+                    </div>
+
+                    <div className="space-y-3 pb-20">
+                        {activeTab === 'check' ? data.checklist.map(item => (
+                            <div key={item.id} className="bg-white p-5 rounded-3xl flex items-center gap-4 muji-shadow border border-gray-50" onClick={() => updateData({ checklist: data.checklist.map(c => c.id === item.id ? {...c, completed: !c.completed} : c) })}>
+                                <div className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all ${item.completed ? 'muji-bg-black border-black' : 'border-gray-100'}`}>
+                                    {item.completed && <i className="fa-solid fa-check text-white text-[10px]"></i>}
+                                </div>
+                                <span className={`text-sm ${item.completed ? 'text-gray-300 line-through' : 'text-gray-700'}`}>{item.text}</span>
+                            </div>
+                        )) : data.memos.map(memo => (
+                            <div key={memo.id} className="bg-white p-6 rounded-3xl muji-shadow border border-gray-50 group">
+                                <p className="text-sm font-light leading-relaxed text-gray-600 whitespace-pre-wrap">{renderMemo(memo.content)}</p>
+                                <div className="mt-5 pt-4 border-t border-gray-50 flex justify-between items-center">
+                                    <span className="text-[9px] font-bold text-gray-300 tracking-widest uppercase">{new Date(memo.timestamp).toLocaleDateString()}</span>
+                                    <button onClick={() => updateData({ memos: data.memos.filter(m => m.id !== memo.id) })} className="opacity-0 group-hover:opacity-100 text-gray-200 hover:text-red-400 p-2"><i className="fa-solid fa-trash-can text-xs"></i></button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const InfoPage = ({ data, updateData }) => {
+            const [editingId, setEditingId] = useState(null);
+
+            const weather = [
+                { day: 'MON', icon: 'fa-sun', t: '32°' }, { day: 'TUE', icon: 'fa-sun', t: '33°' }, { day: 'WED', icon: 'fa-cloud-sun', t: '31°' },
+                { day: 'THU', icon: 'fa-cloud', t: '29°' }, { day: 'FRI', icon: 'fa-sun', t: '32°' }, { day: 'SAT', icon: 'fa-sun', t: '34°' }, { day: 'SUN', icon: 'fa-sun', t: '32°' }
+            ];
+
+            const exportData = () => {
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = `Trip_Data_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+            };
+
+            return (
+                <div className="fade-in space-y-8 pb-32 p-1">
+                    <section className="space-y-4">
+                        <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2">Weather Forecast</h3>
+                        <div className="bg-white p-7 rounded-[2.5rem] muji-shadow border border-gray-100">
+                            <div className="flex justify-between items-center mb-6">
+                                <div><p className="text-3xl font-bold">32°C</p><p className="text-[10px] font-bold text-gray-400 uppercase mt-1 tracking-widest">Chiang Mai, TH</p></div>
+                                <i className="fa-solid fa-sun text-4xl text-black/80"></i>
+                            </div>
+                            <div className="flex justify-between">
+                                {weather.map((w, i) => (
+                                    <div key={i} className="flex flex-col items-center gap-2">
+                                        <span className="text-[8px] font-bold text-gray-300">{w.day}</span>
+                                        <i className={`fa-solid ${w.icon} text-[10px]`}></i>
+                                        <span className="text-[10px] font-bold">{w.t}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="space-y-4">
+                        <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2">Flight Information</h3>
+                        {data.flights.map(f => (
+                            <div key={f.id} className="bg-white rounded-[2rem] overflow-hidden muji-shadow border border-gray-100">
+                                <div className="muji-bg-black py-2.5 px-6 flex justify-between text-white text-[9px] font-bold tracking-[0.2em] uppercase">
+                                    <span>{f.type}</span>
+                                    <span>{f.date}</span>
+                                </div>
+                                <div className="p-6 flex justify-between items-center text-center">
+                                    <div><p className="text-2xl font-bold">{f.from}</p><p className="text-[10px] font-bold text-gray-400 mt-1 uppercase">{f.departureTime}</p></div>
+                                    <div className="flex-1 px-6 opacity-20 flex flex-col items-center">
+                                        <span className="text-[9px] font-bold mb-1 tracking-widest">{f.code}</span>
+                                        <div className="w-full h-px border-t border-dashed border-black"></div>
+                                        <i className="fa-solid fa-plane text-xs mt-1"></i>
+                                    </div>
+                                    <div><p className="text-2xl font-bold">{f.to}</p><p className="text-[10px] font-bold text-gray-400 mt-1 uppercase">{f.arrivalTime}</p></div>
+                                </div>
+                            </div>
+                        ))}
+                    </section>
+
+                    <section className="space-y-4">
+                        <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2">Stay Info</h3>
+                        {data.accommodations.map(h => (
+                            <div key={h.id} className="bg-white p-7 rounded-[2.5rem] muji-shadow border border-gray-100">
+                                <h4 className="text-lg font-bold text-black">{h.name}</h4>
+                                <p className="text-xs text-gray-400 font-light mt-1 mb-5">{h.address}</p>
+                                <div className="grid grid-cols-2 gap-6 pt-6 border-t border-gray-50">
+                                    <div><p className="text-[8px] font-bold text-gray-300 uppercase tracking-widest mb-1">Check-in</p><p className="text-xs font-medium">{h.checkIn}</p></div>
+                                    <div><p className="text-[8px] font-bold text-gray-300 uppercase tracking-widest mb-1">Check-out</p><p className="text-xs font-medium">{h.checkOut}</p></div>
+                                </div>
+                            </div>
+                        ))}
+                    </section>
+
+                    <section className="space-y-4">
+                        <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2">Emergency & Data</h3>
+                        <div className="bg-white p-8 rounded-[2.5rem] muji-shadow border border-gray-100 space-y-8">
+                            <div className="grid grid-cols-2 gap-6">
+                                <div><p className="text-[8px] font-bold text-gray-300 uppercase tracking-widest">Tourist Police</p><p className="text-lg font-bold">1155</p></div>
+                                <div><p className="text-[8px] font-bold text-gray-300 uppercase tracking-widest">Ambulance</p><p className="text-lg font-bold">1669</p></div>
+                            </div>
+                            <div className="pt-8 border-t border-gray-50 flex gap-4">
+                                <button onClick={exportData} className="flex-1 py-4 bg-gray-50 rounded-2xl text-[9px] font-bold tracking-widest uppercase border border-gray-100 hover:bg-black hover:text-white transition-all">Export JSON</button>
+                                <label className="flex-1 py-4 bg-gray-50 rounded-2xl text-[9px] font-bold tracking-widest uppercase border border-gray-100 text-center cursor-pointer hover:bg-black hover:text-white transition-all">
+                                    Import JSON <input type="file" accept=".json" className="hidden" onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (file) {
+                                            const reader = new FileReader();
+                                            reader.onload = (ev) => {
+                                                try { updateData(JSON.parse(ev.target.result)); alert('Success!'); } catch { alert('Error!'); }
+                                            };
+                                            reader.readAsText(file);
+                                        }
+                                    }} />
+                                </label>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            );
+        };
+
+        const GuidePage = ({ data }) => {
+            const [activeId, setActiveId] = useState(data.guides[0]?.id);
+            const article = data.guides.find(g => g.id === activeId);
+
+            return (
+                <div className="fade-in space-y-6">
+                    <div className="flex gap-2 overflow-x-auto pb-4 hide-scrollbar">
+                        {data.guides.map(g => (
+                            <button key={g.id} onClick={() => setActiveId(g.id)} className={`flex-shrink-0 px-5 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] transition-all ${activeId === g.id ? 'muji-bg-black text-white' : 'bg-white text-gray-400 border border-gray-50'}`}>
+                                {g.title}
+                            </button>
+                        ))}
+                    </div>
+                    {article && (
+                        <article className="bg-white rounded-[2.5rem] overflow-hidden muji-shadow border border-gray-100 fade-in">
+                            <img src={article.imageUrl} className="w-full h-56 object-cover grayscale" />
+                            <div className="p-8">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em]">{article.category}</span>
+                                <h2 className="text-3xl font-bold text-black mt-3 mb-6 tracking-tighter leading-tight">{article.title}</h2>
+                                <p className="text-sm text-gray-500 font-light leading-loose break-words">{article.content}</p>
+                                {article.coordinates && (
+                                    <div className="mt-10 rounded-3xl overflow-hidden grayscale border border-gray-100 h-48 relative">
+                                        <iframe width="100%" height="100%" frameBorder="0" scrolling="no" src={`https://www.openstreetmap.org/export/embed.html?bbox=${article.coordinates.lng-0.005},${article.coordinates.lat-0.005},${article.coordinates.lng+0.005},${article.coordinates.lat+0.005}&layer=mapnik&marker=${article.coordinates.lat},${article.coordinates.lng}`}></iframe>
+                                        <div className="absolute bottom-2 right-2 bg-white/80 backdrop-blur px-2 py-1 text-[8px] font-bold uppercase tracking-widest rounded-lg">OpenStreetMap</div>
+                                    </div>
+                                )}
+                            </div>
+                        </article>
+                    )}
+                </div>
+            );
+        };
+
+        // --- MAIN APP ---
+        const App = () => {
+            const [currentPage, setCurrentPage] = useState('plan');
+            const [data, setData] = useState(INITIAL_DATA);
+            const [isLoaded, setIsLoaded] = useState(false);
+
+            useEffect(() => {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) { try { setData(JSON.parse(saved)); } catch (e) {} }
+                setIsLoaded(true);
+            }, []);
+
+            useEffect(() => {
+                if (isLoaded) localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            }, [data, isLoaded]);
+
+            const updateData = (updates) => setData(prev => ({ ...prev, ...updates }));
+
+            if (!isLoaded) return <div className="flex h-screen items-center justify-center text-gray-300 italic">Loading Trip...</div>;
+
+            return (
+                <div className="max-w-md mx-auto min-h-screen flex flex-col px-4 pt-10 pb-16">
+                    <header className="mb-8 px-2 flex justify-between items-end">
+                        <div>
+                            <h1 className="text-[10px] font-bold tracking-[0.4em] uppercase opacity-30">Trip 2026</h1>
+                            <h2 className="text-2xl font-bold tracking-tighter mt-1">黑黑黑肥肥 Chiang Mai</h2>
+                        </div>
+                        <div className="text-right text-black/20"><i className="fa-solid fa-plane-arrival text-lg"></i></div>
+                    </header>
+                    
+                    <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+                    
+                    <main className="flex-1">
+                        {currentPage === 'plan' && <PlanPage data={data} updateData={updateData} />}
+                        {currentPage === 'guide' && <GuidePage data={data} />}
+                        {currentPage === 'wallet' && <WalletPage data={data} updateData={updateData} />}
+                        {currentPage === 'lists' && <ListsPage data={data} updateData={updateData} />}
+                        {currentPage === 'info' && <InfoPage data={data} updateData={updateData} />}
+                    </main>
+
+                    <footer className="mt-12 text-center opacity-10 pointer-events-none text-[8px] font-bold tracking-[0.5em] uppercase">MUJI TRAVEL COMPANION V1.1</footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

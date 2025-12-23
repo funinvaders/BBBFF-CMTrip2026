@@ -1,0 +1,7 @@
+{
+  "name": "黑黑黑肥肥 Chiang Mai Trip 2026",
+  "description": "A Japanese-inspired, mobile-first travel companion featuring itinerary planning, expense tracking with FX conversion, travel guides, and checklists.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
